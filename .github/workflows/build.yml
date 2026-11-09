@@ -1,10 +1,10 @@
-name: Custom ROM Builder
+name: Interactive Termux Server
 
 on:
   workflow_dispatch:
 
 jobs:
-  build-rom:
+  run-ssh:
     runs-on: ubuntu-22.04
 
     steps:
@@ -15,44 +15,11 @@ jobs:
       run: |
         sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php /usr/local/lib/android /opt/ghc /usr/share/swift
         sudo apt-get clean
-        df -h
 
     - name: Install Android Build Dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32readline-dev lib32z1-dev liblz4-tool libncurses5-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3
 
-    - name: Install Google Repo Tool
-      run: |
-        mkdir -p ~/bin
-        curl https://googleapis.com > ~/bin/repo
-        chmod a+x ~/bin/repo
-        sudo ln -sf ~/bin/repo /usr/bin/repo
-
-    - name: Configure Git
-      run: |
-        git config --global user.name "Wtf-luffy"
-        git config --global user.email "wtf-luffy@example.com"
-
-    - name: Initialize ROM Source & Device Trees
-      run: |
-        mkdir android-source
-        cd android-source
-        repo init -u https://github.com -b lineage-20.0 --git-lfs --depth=1
-        
-        mkdir -p .repo/local_manifests
-        echo '<?xml version="1.0" encoding="UTF-8"?>
-        <manifest>
-          <project name="LineageOS/android_device_xiaomi_violet" path="device/xiaomi/violet" remote="github" revision="lineage-20.0" />
-          <project name="TheMuppets/proprietary_vendor_xiaomi_violet" path="vendor/xiaomi/violet" remote="github" revision="lineage-20.0" />
-          <project name="LineageOS/android_kernel_xiaomi_violet" path="kernel/xiaomi/violet" remote="github" revision="lineage-20.0" />
-        </manifest>' > .repo/local_manifests/violet.xml
-        
-        repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
-
-    - name: Compile the Custom ROM
-      run: |
-        cd android-source
-        source build/envsetup.sh
-        lunch lineage_violet-userdebug
-        mka bacon -j$(nproc --all)
+    - name: Launch Live SSH Server For Termux
+      uses: mxschmitt/action-tmate@v3

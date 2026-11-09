@@ -1,7 +1,7 @@
 name: Custom ROM Builder
 
 on:
-  workflow_dispatch: # Allows you to start the build manually with a button
+  workflow_dispatch:
 
 jobs:
   build-rom:
@@ -14,14 +14,14 @@ jobs:
     - name: Clean Up Server Space
       run: |
         docker rmi $(docker images -q)
-        sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php /usr/local/lib/android
+        sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php /usr/local/lib/android /opt/ghc
         sudo apt-get clean
         df -h
 
     - name: Install Android Build Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32readline-dev lib32z1-dev liblz4-tool libncurses5-dev libsdl1.1-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev
+        sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32readline-dev lib32z1-dev liblz4-tool libncurses5-dev libsdl1.1-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3
 
     - name: Install Google Repo Tool
       run: |
@@ -32,23 +32,24 @@ jobs:
 
     - name: Configure Git
       run: |
-        git config --global user.name "Your Name"
-        git config --global user.email "your-email@example.com"
+        git config --global user.name "Wtf-luffy"
+        git config --global user.email "wtf-luffy@example.com"
 
     - name: Initialize ROM Source & Device Trees
       run: |
         mkdir android-source
         cd android-source
-        # Example using LineageOS source. Swap this with your target ROM manifest.
-        repo init -u https://github.com -b lineage-21.0 --git-lfs --depth=1
+        # Syncing LineageOS 20.0 (Android 13) source code
+        repo init -u https://github.com -b lineage-20.0 --git-lfs --depth=1
         
-        # Create local manifest to pull Redmi Note 7 Pro ('violet' or 'lavender') trees
+        # Setup working manifests for Redmi Note 7 Pro (violet)
         mkdir -p .repo/local_manifests
         echo '<?xml version="1.0" encoding="UTF-8"?>
         <manifest>
-          <!-- Replace these with the actual device tree, kernel, and vendor repositories for your specific device model -->
-          <project name="LineageOS/android_device_xiaomi_violet" path="device/xiaomi/violet" remote="github" />
-        </manifest>' > .repo/local_manifests/roomservice.xml
+          <project name="LineageOS/android_device_xiaomi_violet" path="device/xiaomi/violet" remote="github" revision="lineage-20.0" />
+          <project name="TheMuppets/proprietary_vendor_xiaomi_violet" path="vendor/xiaomi/violet" remote="github" revision="lineage-20.0" />
+          <project name="LineageOS/android_kernel_xiaomi_violet" path="kernel/xiaomi/violet" remote="github" revision="lineage-20.0" />
+        </manifest>' > .repo/local_manifests/violet.xml
         
         repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
 
@@ -58,4 +59,3 @@ jobs:
         source build/envsetup.sh
         lunch lineage_violet-userdebug
         mka bacon -j$(nproc --all)
-        
